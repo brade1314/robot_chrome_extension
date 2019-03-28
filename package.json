@@ -1,7 +1,7 @@
 {
-	"name": "autoplay",
+	"name": "baiduyun",
 	"version": "1.0.0",
-	"description": "课程自动播放插件",
+	"description": "百度云下载",
 	"private": true,
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",

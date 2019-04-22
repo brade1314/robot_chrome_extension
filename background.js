@@ -1,8 +1,8 @@
 (function () {
 
     // 设置扩展状态提示信息
-    chrome.browserAction.setBadgeText({text: '1.0'});
-    chrome.browserAction.setBadgeBackgroundColor({color: [255, 0, 0, 255]});
+    // chrome.browserAction.setBadgeText({text: '2.0'});
+    // chrome.browserAction.setBadgeBackgroundColor({color: [255, 0, 0, 255]});
 
     // 跳转到设置页面
     chrome.browserAction.onClicked.addListener(tab => {
@@ -15,13 +15,13 @@
         let _portName = port.name;
         // console.log("port:" + JSON.stringify(port));
         if (!port.name || port.name == "") {
-            console.log("Connection failed ...");
+            console.log("Connection failed ...")
             return;
         }
         port.onMessage.addListener(response => {
             console.log("listener response :" + JSON.stringify(response));
             if (!response.name || response.name == "") {
-                console.log("Connection listener failed ...");
+                console.log("Connection listener failed ...")
                 return;
             }
             if (response.action == "ping") {
@@ -51,25 +51,26 @@
                 }
             });
         }
-    };
+    }
 
     let autoplayService = (channel, msg) => {
         chrome.webRequest.onBeforeRequest.addListener(details => {
-            console.log("request details :" + JSON.stringify(details));
+            // console.log("request details :" + JSON.stringify(details));
             const reqUrl = details.url;
-            if (msg.action != "ping" && msg.action != "completed" && reqUrl.match(new RegExp(url))) {
-                channel.postMessage({"name": "autoplay", action: "next"});
-                return updateSesstionTime(details);
+			// console.log("msg :" + JSON.stringify(msg));
+            if (msg.action != "completed" && reqUrl.match(new RegExp(url))) {
+                return updateSesstionTime(channel,details);
             }
         }, {urls: [url]}, ["blocking", "requestBody",]);
 
-    };
+    }
 
-    let updateSesstionTime = (msg) => {
+    let updateSesstionTime = (channel,msg) => {
         let url = msg.url;
         let lessonStatus = getQueryString(url, "lesson_status");
         console.log("lessonStatus --->:" + lessonStatus);
         if (lessonStatus == "completed") {
+			channel.postMessage({"name": "autoplay", action: "next"});
             return {cancel: false};
         }
 
@@ -100,10 +101,11 @@
         }
 
         if (totalTime >= maxTotalTime) {
+			channel.postMessage({"name": "autoplay", action: "next"});
             return {cancel: false};
         }
         return {redirectUrl: getTargetUrl(url, sesstionTime)};
-    };
+    }
 
     let getQueryString = (url, name) => {
         let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
@@ -111,7 +113,7 @@
         let r = query.match(reg);
         if (r != null) return unescape(r[2]);
         return null;
-    };
+    }
 
     let getTargetUrl = (url, sesstionTime) => {
         let query = url.substring(url.lastIndexOf('?') + 1);
@@ -128,6 +130,6 @@
 
             return targetUrl;
         }
-    };
+    }
 
 })();

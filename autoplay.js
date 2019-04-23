@@ -6,6 +6,9 @@
         console.log(" ==>:  " + JSON.stringify(msg));
         if (msg.action == 'next') {
             nextVideo();
+        }else if(msg.action == 'refresh'){
+            console.log("===>: "+document.location.href);
+            window.location.reload();
         }
     });
 

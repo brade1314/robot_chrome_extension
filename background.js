@@ -56,55 +56,31 @@
     let autoplayService = (channel, msg) => {
         chrome.webRequest.onBeforeRequest.addListener(details => {
             // console.log("request details :" + JSON.stringify(details));
+            // console.log("msg :" + JSON.stringify(msg));
             const reqUrl = details.url;
-			// console.log("msg :" + JSON.stringify(msg));
-            if (msg.action != "completed" && reqUrl.match(new RegExp(url))) {
-                return updateSesstionTime(channel,details);
+            if (!reqUrl.match(new RegExp(url))) {
+                return true;
             }
+            if (msg.action == "completed") {
+                return {cancel: false};
+            }
+
+            let lessonStatus = getQueryString(reqUrl, "lesson_status");
+            console.log("lessonStatus --->:" + lessonStatus);
+            let requiredTime = parseInt(getQueryString(reqUrl, "required_time"));
+            console.log("requiredTime --->:" + requiredTime);
+            let session_time = parseInt(getQueryString(reqUrl, "session_time").split(":")[1]);
+            console.log("sessionTime --->:" + session_time);
+            if (lessonStatus == "completed") {
+                channel.postMessage({"name": "autoplay", action: "next"});
+                return {cancel: false};
+            }
+            if (session_time >= requiredTime) {
+                channel.postMessage({"name": "autoplay", action: "refresh"});
+                return {cancel: false};
+            }
+            return {redirectUrl: getTargetUrl(reqUrl, Math.floor((Math.random() + 1) * requiredTime))};
         }, {urls: [url]}, ["blocking", "requestBody",]);
-
-    }
-
-    let updateSesstionTime = (channel,msg) => {
-        let url = msg.url;
-        let lessonStatus = getQueryString(url, "lesson_status");
-        console.log("lessonStatus --->:" + lessonStatus);
-        if (lessonStatus == "completed") {
-			channel.postMessage({"name": "autoplay", action: "next"});
-            return {cancel: false};
-        }
-
-        let requiredTime = parseInt(getQueryString(url, "required_time"));
-        console.log("requiredTime --->:" + requiredTime);
-
-        let totalTime = parseInt(getQueryString(url, "total_time"));
-        console.log("totalTime --->:" + totalTime);
-        // chrome.storage.local.get("filterSetting", result => {
-        //     let _setting = result.filterSetting;
-        //     if (_setting) {
-        //        const _paramsJson = _setting.filter_params;
-        //     }
-        // });
-        let sesstionTime = Math.floor((Math.random() + 1) * requiredTime);
-        let maxTotalTime = requiredTime;
-        if (0 < requiredTime <= 15) {
-            maxTotalTime = requiredTime * 12;
-        } else if (15 < requiredTime <= 30) {
-            maxTotalTime = requiredTime * 6;
-        } else if (30 < requiredTime <= 60) {
-            maxTotalTime = requiredTime * 3;
-        } else if (60 < requiredTime <= 90) {
-            maxTotalTime = requiredTime * 2;
-        } else {
-            sesstionTime = requiredTime + Math.floor((Math.random() + 1) * 30);
-            maxTotalTime = requiredTime * 1.5;
-        }
-
-        if (totalTime >= maxTotalTime) {
-			channel.postMessage({"name": "autoplay", action: "next"});
-            return {cancel: false};
-        }
-        return {redirectUrl: getTargetUrl(url, sesstionTime)};
     }
 
     let getQueryString = (url, name) => {
